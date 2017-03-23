@@ -53,6 +53,9 @@ void ARM_STM32_SPI_Init_Pins(uint8_t spi_num, uint8_t spi_gpio_speed, GPIO_TypeD
 void ARM_STM32_SPI_Set_Parameters(uint8_t spi_num, uint16_t spi_datasize, uint16_t spi_speed, uint16_t spi_direction, uint16_t spi_msb_lsb_first)
 {
 	//SET THE PARAMETERS OF THE SPECIFIED SPI
+	//NOTE: TO HAVE ACCESS TO SPI CONFIG REGISTERS AND TO
+	//BE ABLE TO WRITE TO THEM, MAKE SURE FIRST CLOCK IS
+	//GATED/ENABLED TO THE SPI PERIPHERAL
 	
 	#ifdef STM32F103
 	if(spi_num == ARM_STM32_SPI_PERIPHERAL_SPI1)
@@ -101,7 +104,9 @@ void ARM_STM32_SPI_Set_Parameters(uint8_t spi_num, uint16_t spi_datasize, uint16
 
 void ARM_STM32_SPI_Start(uint8_t spi_num)
 {
-	//START SPECIDIED SPI PERIPHERAL
+	//ENABLE THE SPECIFIED SPI PERIPHERAL
+	//ENABLE CLOCK TO THE SPI PERIPHERAL AS
+	//WELL IF NOT ALREADY ENABLED
 	
 	#ifdef STM32F103
 	if(spi_num == ARM_STM32_SPI_PERIPHERAL_SPI1)
@@ -112,33 +117,58 @@ void ARM_STM32_SPI_Start(uint8_t spi_num)
 	else if (spi_num == ARM_STM32_SPI_PERIPHERAL_SPI2)
 	{
 		RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
-		SPI_Cmd(SPI1, ENABLE);
+		SPI_Cmd(SPI2, ENABLE);
 	}
 	#endif
 }
 
 void ARM_STM32_SPI_Stop(uint8_t spi_num)
 {
-	//DISABLE THE SPECIFIED SPI AND STOP CLOCK TO IT
+	//DISABLE THE SPECIFIED SPI AND REMOVE CLOCK FROM IT
 	
 	#ifdef STM32F103
 	if(spi_num == ARM_STM32_SPI_PERIPHERAL_SPI1)
 	{
-		RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, DISABLE);
 		SPI_Cmd(SPI1, DISABLE);
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, DISABLE);
 	}
 	else if (spi_num == ARM_STM32_SPI_PERIPHERAL_SPI2)
 	{
-		RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, DISABLE);
 		SPI_Cmd(SPI2, DISABLE);
+		RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, DISABLE);
 	}
 	#endif
 }
-void ARM_STM32_SPI_Send_Data(void);
+
+uint16_t ARM_STM32_SPI_Send_Get_Data(uint8_t spi_num, uint16_t data)
+{
+	//SEND AND RECEIVE DATA THROUGH SPECIFIED SPI
+	//DATA CAN BE EITHER 8 BITS OR 16 BITS
+	
+	#ifdef STM32F103
+	SPI_TypeDef* spi_ptr;
+	if(spi_num == ARM_STM32_SPI_PERIPHERAL_SPI1)
+	{
+		 spi_ptr = SPI1;
+	}
+	else if(spi_num == ARM_STM32_SPI_PERIPHERAL_SPI2)
+	{
+		spi_ptr = SPI2;
+	}
+	
+	SPI_I2S_SendData(spi_ptr, data);
+	
+	//RECEIVE DATA
+	uint16_t rec = SPI_I2S_ReceiveData(spi_ptr);
+	while(SPI_I2S_GetFlagStatus(spi_ptr, SPI_I2S_FLAG_RXNE) == RESET){};
+	return rec;
+	#endif
+}
 
 void ARM_STM32_SPI_Deinit(uint8_t spi_num)
 {
-	//DEINTIALIZE THE SPI PERPHERAL
+	//DEINTIALIZE THE SPI PERPHERAL REGISTERS
+	//TO THEIR DEFAULT VALUES
 	
 	#ifdef STM32F103
 	if(spi_num == ARM_STM32_SPI_PERIPHERAL_SPI1)

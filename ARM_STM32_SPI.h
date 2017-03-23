@@ -53,6 +53,7 @@
 #endif
 
 #ifdef STM32F072
+
 #endif
 
 
@@ -60,9 +61,7 @@ void ARM_STM32_SPI_Init_Pins(uint8_t spi_num, uint8_t spi_gpio_speed, GPIO_TypeD
 void ARM_STM32_SPI_Set_Parameters(uint8_t spi_num, uint16_t spi_datasize, uint16_t spi_speed, uint16_t spi_direction, uint16_t spi_msb_lsb_first);
 void ARM_STM32_SPI_Start(uint8_t spi_num);
 void ARM_STM32_SPI_Stop(uint8_t spi_num);
-
-void ARM_STM32_SPI_Send_Data(void);
-
+uint16_t ARM_STM32_SPI_Send_Get_Data(uint8_t spi_num, uint16_t data);
 void ARM_STM32_SPI_Deinit(uint8_t spi_num);
 
 #endif
