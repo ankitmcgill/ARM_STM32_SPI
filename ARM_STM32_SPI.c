@@ -15,7 +15,6 @@
 
 #include "ARM_STM32_SPI.h"
 
-
 void ARM_STM32_SPI_Init_Pins(uint8_t spi_num, uint8_t spi_gpio_speed, GPIO_TypeDef* spi_cs_port, uint16_t spi_cs_pin_num)
 {
 	//INTIALIZE SPI GPIO PINS DEPENDING ON WHICH SPI PERIPHERAL IS SPECIFIED
@@ -25,17 +24,25 @@ void ARM_STM32_SPI_Init_Pins(uint8_t spi_num, uint8_t spi_gpio_speed, GPIO_TypeD
 	if(spi_num == ARM_STM32_SPI_PERIPHERAL_SPI1)
 	{
 		//SPI1 PERIPHERAL
-		gpio.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7;
+		gpio.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_7;
 		gpio.GPIO_Mode = GPIO_Mode_AF_PP;
 		gpio.GPIO_Speed = (GPIOSpeed_TypeDef)spi_gpio_speed;
+		GPIO_Init(GPIOA, &gpio);
+		
+		gpio.GPIO_Pin = GPIO_Pin_6;
+		gpio.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 		GPIO_Init(GPIOA, &gpio);
 	}
 	else if(spi_num == ARM_STM32_SPI_PERIPHERAL_SPI2)
 	{
 		//SPI2 PERIPHERAL
-		gpio.GPIO_Pin = GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
+		gpio.GPIO_Pin = GPIO_Pin_13 | GPIO_Pin_15;
 		gpio.GPIO_Mode = GPIO_Mode_AF_PP;
 		gpio.GPIO_Speed = (GPIOSpeed_TypeDef)spi_gpio_speed;
+		GPIO_Init(GPIOB, &gpio);
+		
+		gpio.GPIO_Pin = GPIO_Pin_14;
+		gpio.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 		GPIO_Init(GPIOB, &gpio);
 	}
 	
@@ -83,7 +90,7 @@ void ARM_STM32_SPI_Set_Parameters(uint8_t spi_num, uint16_t spi_datasize, uint16
 	{
 		//SPI2 PERIPHERAL
 		
-		//ENABLE CLOCK TO SPI1
+		//ENABLE CLOCK TO SPI2
 		RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
 		
 		SPI_InitTypeDef spi;
@@ -156,13 +163,30 @@ uint16_t ARM_STM32_SPI_Send_Get_Data(uint8_t spi_num, uint16_t data)
 		spi_ptr = SPI2;
 	}
 	
+	//SEND DATA
 	SPI_I2S_SendData(spi_ptr, data);
+	while(SPI_I2S_GetFlagStatus(spi_ptr, SPI_I2S_FLAG_TXE) == RESET){};
 	
 	//RECEIVE DATA
-	uint16_t rec = SPI_I2S_ReceiveData(spi_ptr);
 	while(SPI_I2S_GetFlagStatus(spi_ptr, SPI_I2S_FLAG_RXNE) == RESET){};
+	uint16_t rec = SPI_I2S_ReceiveData(spi_ptr);
+	
 	return rec;
 	#endif
+}
+
+uint16_t ARM_STM32_SPI_Send_Get_Data_Spi1(uint16_t data)
+{
+	//SEND DATA THROUGH SPI1 PERIPHERAL
+	
+	return ARM_STM32_SPI_Send_Get_Data(ARM_STM32_SPI_PERIPHERAL_SPI1, data);
+}
+
+uint16_t ARM_STM32_SPI_Send_Get_Data_Spi2(uint16_t data)
+{
+	//SEND DATA THROUGH SPI2 PERIPHERAL
+	
+	return ARM_STM32_SPI_Send_Get_Data(ARM_STM32_SPI_PERIPHERAL_SPI2, data);
 }
 
 void ARM_STM32_SPI_Deinit(uint8_t spi_num)
